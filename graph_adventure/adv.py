@@ -1,9 +1,9 @@
 from room import Room
 from player import Player
 from world import World
-
+from util import Queue, Stack
 import random
-
+import copy
 # Load world
 world = World()
 
@@ -18,27 +18,139 @@ roomGraph={494: [(1, 8), {'e': 457}], 492: [(1, 20), {'e': 400}], 493: [(2, 5), 
 world.loadGraph(roomGraph)
 world.printRooms()
 player = Player("Name", world.startingRoom)
+last_viable = world.startingRoom
+def find_reverse(direction):
 
+    if direction == 'n':
+        new_direction = 's'
+    elif direction == 's':
+        new_direction = 'n'
+    elif direction == 'e':
+        new_direction = 'w'
+    else:
+        new_direction = 'e'
+
+    return new_direction
 
 # FILL THIS IN
-traversalPath = ['n', 's']
-
+#traversalPath = ['n', 's']
+# traversalPath = ['n', 'n']
+traversalPath = []
+universal_traversalPath = []
 
 # TRAVERSAL TEST
+
 visited_rooms = set()
-player.currentRoom = world.startingRoom
-visited_rooms.add(player.currentRoom)
-for move in traversalPath:
-    player.travel(move)
-    visited_rooms.add(player.currentRoom)
-
-if len(visited_rooms) == len(roomGraph):
-    print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
-else:
-    print("TESTS FAILED: INCOMPLETE TRAVERSAL")
-    print(f"{len(roomGraph) - len(visited_rooms)} unvisited rooms")
 
 
+s = Stack()
+s.push(world.startingRoom)
+
+
+
+# Create a Set to store visited vertices
+visited = set()
+current_room = world.startingRoom
+active = True
+junction_path = []
+viable_junctions = []
+viable_junctions.append(world.startingRoom)
+
+def dft(current_room):
+  
+
+    # While the stack is not empty...
+    while s.size() > 0:
+        # Pop the first vertex
+        v = s.pop()
+        s.push(v)
+        # If that vertex has not been visited...
+        if v not in visited:
+            # Mark it as visited...
+
+
+            visited_rooms.add(v)
+            # Then add all of its neighbors to the top of the stack
+            unvisited_rooms = []
+            for exit in v.getExits():
+                #print("YOU CAN MOVE ", exit)
+                a_room = v.getRoomInDirection(exit)
+                if a_room not in visited_rooms:
+                    print("THE ROOM IN ", exit, " DIRECTION HASN'T BEEN VISITED")
+                    unvisited_rooms.append(exit)
+            #if len(unvisited_rooms) > 1:
+                # We'll have to revisit this place at some point
+                #print("SET LAST VIABLE JUNCTION ", str(v))
+                #last_viable = v
+                #junction_path.append(v)
+            if len(unvisited_rooms) > 0:
+
+                #print("YOUR ROOM", unvisited_rooms[0])
+                chosen_room = v.getRoomInDirection(unvisited_rooms[0])
+                #print("CHOSEN ROOM", chosen_room)
+                s.push(chosen_room)
+                visited_rooms.add(chosen_room)
+                traversalPath.append(unvisited_rooms[0])
+                universal_traversalPath.append(unvisited_rooms[0])
+                #if not len(unvisited_rooms) > 1:
+                junction_path.append(find_reverse(unvisited_rooms[0]))
+
+                #traversalPath_backtracking.append(unvisited_rooms[0])
+                current_room = chosen_room
+                #print("CURRENT", str(current_room))
+
+                print("UPDATED CURRENT ROOM")
+            elif len(visited_rooms) < len(roomGraph):
+                print("WORLD SIZE", len(roomGraph))
+                print("STACK SIZE", s.size())
+                #return backtrack(current_room)
+                #Try to fix backtracking error
+                #return backtrack(current_room, backpath=None)
+                return backtrack(v)
+
+            elif len(visited_rooms) == len(roomGraph):
+
+                return test()
+
+  
+
+
+def test():
+    print("TRAVERSED SIZE IS ", len(visited_rooms))
+    print("PATH IS ", traversalPath)
+    # ['n', 'n', 's', 's', 's', 'n', 'w', 'w', 'e', 'e', 'e']
+    for move in traversalPath:
+        player.travel(move)
+        visited_rooms.add(player.currentRoom)
+
+    if len(visited_rooms) == len(roomGraph):
+        print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
+    else:
+        print("TESTS FAILED: INCOMPLETE TRAVERSAL")
+        print(f"{len(roomGraph) - len(visited_rooms)} unvisited rooms")
+
+
+def backtrack(current_room):
+    print("########################\nBACKTRACKING\n########################")
+    print("PATH", traversalPath)
+    copyPath = copy.deepcopy(traversalPath)
+    go_back = find_reverse(copyPath.pop(-1))
+    print("GO ", go_back)
+    #stack_copy = copy.deepcopy(s)
+    current = s.pop()
+    one_back = s.pop()
+    traversalPath.append(go_back)
+    print("STACK", s.size())
+    print("ROOM", str(one_back))
+
+    s.push(one_back)
+    dft(current_room)
+
+
+
+
+dft(world.startingRoom)
+print(traversalPath)
 
 #######
 # UNCOMMENT TO WALK AROUND
